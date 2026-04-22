@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini 3 Deep Think - Solver Pro v2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar for that pro look */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1a1a1b; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        
+        .code-font { font-family: 'Consolas', 'Monaco', monospace; }
+    </style>
+</head>
+<body class="bg-[#1a1a1b] text-gray-100 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto bg-[#2d2d2e] rounded-xl shadow-2xl overflow-hidden border border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-700">
+            <h2 class="text-xl md:text-2xl font-bold text-blue-400 uppercase tracking-wider">
+                Gemini 3 Deep Think: <span class="text-white">Competitive Solver</span>
+            </h2>
+        </div>
+
+        <div class="p-6 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-400 uppercase">Model</label>
+                    <select id="model_select" class="w-full bg-[#121212] border border-gray-600 rounded-md p-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+                        <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Deep Thinking)</option>
+                        <option value="gemini-3-flash-preview">Gemini 3 Flash (High-Speed)</option>
+                        <option value="gemini-3.1-flash-lite-preview">Gemini 3.1 Flash-Lite</option>
+                        <option value="gemini-2.5-pro">Gemini 2.5 Pro (Stable)</option>
+                        <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-400 uppercase">API Key</label>
+                    <input type="password" id="api_key" placeholder="Enter API Key" class="w-full bg-[#121212] border border-gray-600 rounded-md p-3 focus:border-blue-500 outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase">Problem Statement</label>
+                        <textarea id="q_text" placeholder="Paste problem description..." class="w-full h-40 bg-[#121212] border border-gray-600 rounded-md p-3 code-font text-sm focus:border-blue-500 outline-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase">Constraints</label>
+                        <textarea id="q_constraints" placeholder="N <= 10^5, etc." class="w-full h-20 bg-[#121212] border border-gray-600 rounded-md p-3 code-font text-sm focus:border-blue-500 outline-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase">Output Format</label>
+                        <input type="text" id="q_format" placeholder="e.g. Single integer per line" class="w-full bg-[#121212] border border-gray-600 rounded-md p-3 text-sm focus:border-blue-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <label class="text-xs font-bold text-gray-400 uppercase block">Test Cases</label>
+                    <div id="test-cases-container" class="space-y-2">
+                        <div class="flex gap-2 bg-[#252526] p-2 rounded border border-gray-700">
+                            <input type="text" class="test-input flex-1 bg-[#121212] border border-gray-600 rounded p-2 text-sm" placeholder="In">
+                            <input type="text" class="test-output flex-1 bg-[#121212] border border-gray-600 rounded p-2 text-sm" placeholder="Out">
+                            <button class="px-3 bg-red-500/20 text-red-500 rounded hover:bg-red-500 hover:text-white transition" onclick="this.parentElement.remove()">×</button>
+                        </div>
+                    </div>
+                    <button class="w-full py-2 bg-gray-700 hover:bg-gray-600 text-xs font-bold rounded transition uppercase tracking-widest" onclick="addTestCase()">+ Add Case</button>
+                    
+                    <div class="pt-2">
+                        <label class="text-xs font-bold text-gray-400 uppercase">Hints / Notes</label>
+                        <textarea id="q_notes" placeholder="Any specific logic or modulo instructions..." class="w-full h-24 bg-[#121212] border border-gray-600 rounded-md p-3 code-font text-sm focus:border-blue-500 outline-none"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                <button id="solveBtn" onclick="solveProblem()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-lg shadow-lg transition active:transform active:scale-95 uppercase tracking-wider">
+                    Generate Code
+                </button>
+                <button onclick="copyCode()" class="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-lg shadow-lg transition active:transform active:scale-95 uppercase tracking-wider">
+                    Copy Code
+                </button>
+            </div>
+
+            <div class="space-y-2">
+                <label class="text-xs font-bold text-gray-400 uppercase flex justify-between">
+                    <span>Final Java Code</span>
+                    <span id="status-tag" class="text-blue-400 lowercase italic opacity-0 transition-opacity">thinking...</span>
+                </label>
+                <div class="relative group">
+                    <pre id="javaOutput" class="w-full min-h-[300px] max-h-[600px] overflow-auto bg-black text-green-400 p-4 rounded-lg border border-gray-700 text-sm code-font whitespace-pre-wrap leading-relaxed">// Awaiting instructions...</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function addTestCase() {
+            const container = document.getElementById('test-cases-container');
+            const row = document.createElement('div');
+            row.className = 'flex gap-2 bg-[#252526] p-2 rounded border border-gray-700 animate-in fade-in duration-300';
+            row.innerHTML = `
+                <input type="text" class="test-input flex-1 bg-[#121212] border border-gray-600 rounded p-2 text-sm" placeholder="In">
+                <input type="text" class="test-output flex-1 bg-[#121212] border border-gray-600 rounded p-2 text-sm" placeholder="Out">
+                <button class="px-3 bg-red-500/20 text-red-500 rounded hover:bg-red-500 hover:text-white transition" onclick="this.parentElement.remove()">×</button>
+            `;
+            container.appendChild(row);
+        }
+
+        async function solveProblem() {
+            const apiKey = document.getElementById('api_key').value;
+            const modelName = document.getElementById('model_select').value;
+            const btn = document.getElementById('solveBtn');
+            const output = document.getElementById('javaOutput');
+            const status = document.getElementById('status-tag');
+
+            if (!apiKey) { alert("API Key Required"); return; }
+            
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            status.classList.remove('opacity-0');
+            output.innerText = "// Generating optimized Java solution...";
+
+            const samples = Array.from(document.getElementsByClassName('test-input')).map((inputEl, i) => ({
+                input: inputEl.value,
+                output: document.getElementsByClassName('test-output')[i].value
+            }));
+
+            const payload = {
+                contents: [{
+                    parts: [{
+                        text: `Return ONLY the source code for a Java solution to the problem below. 
+                        STRICT RULES:
+                        1. NO introductory text.
+                        2. NO explanations.
+                        3. NO markdown formatting (NO \`\`\`java).
+                        4. Output MUST start with imports or the class definition.
+                        5. Use 998294353 for modulo if required.
+                        6. Class name must be Main.
+
+                        Problem: ${document.getElementById('q_text').value}
+                        Constraints: ${document.getElementById('q_constraints').value}
+                        Samples: ${JSON.stringify(samples)}
+                        Notes: ${document.getElementById('q_notes').value}`
+                    }]
+                }],
+                generationConfig: {
+                    ...(modelName.includes("pro") ? { thinking_config: { include_thoughts: false } } : {}),
+                    temperature: 0.0
+                }
+            };
+
+            try {
+                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await resp.json();
+                let finalCode = data.candidates[0].content.parts.map(p => p.text).join("");
+                
+                // Cleanup
+                finalCode = finalCode.replace(/```java/gi, "").replace(/```/g, "").trim();
+                output.innerText = finalCode;
+            } catch (err) {
+                output.innerText = "ERROR: " + err.message;
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                status.classList.add('opacity-0');
+            }
+        }
+
+        function copyCode() {
+            const code = document.getElementById('javaOutput').innerText;
+            navigator.clipboard.writeText(code);
+            const copyBtn = event.target;
+            const originalText = copyBtn.innerText;
+            copyBtn.innerText = "COPIED!";
+            setTimeout(() => copyBtn.innerText = originalText, 2000);
+        }
+    </script>
+</body>
+</html>
